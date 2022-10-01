@@ -93,7 +93,7 @@ impl MultiAbigen {
     ///
     /// Only Select specific contracts
     ///
-    /// ```
+    /// ```text
     /// use ethers_contract_abigen::{MultiAbigen, SelectContracts};
     /// # fn t() {
     ///    let gen = MultiAbigen::from_json_files("./abi").unwrap().with_filter(
@@ -103,7 +103,7 @@ impl MultiAbigen {
     ///
     /// Exclude all contracts that end with test
     ///
-    /// ```
+    /// ```text
     /// use ethers_contract_abigen::{ExcludeContracts, MultiAbigen};
     /// # fn t() {
     ///    let gen = MultiAbigen::from_json_files("./abi").unwrap().with_filter(

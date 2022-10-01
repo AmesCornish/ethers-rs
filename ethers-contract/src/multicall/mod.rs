@@ -28,7 +28,7 @@ pub const MULTICALL_ADDRESS: Address = H160([
 ]);
 
 /// The chain IDs that [`MULTICALL_ADDRESS`] has been deployed to.
-/// Taken from: https://github.com/mds1/multicall#multicall3-contract-addresses
+/// Taken from: <https://github.com/mds1/multicall#multicall3-contract-addresses>
 pub static MULTICALL_SUPPORTED_CHAIN_IDS: Lazy<[U256; 47]> = Lazy::new(|| {
     use Chain::*;
     [
