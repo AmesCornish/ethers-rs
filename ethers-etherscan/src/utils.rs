@@ -25,14 +25,17 @@ pub async fn lookup_compiler_version(version: &Version) -> Result<Version> {
 pub fn deserialize_address_opt<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<Option<Address>, D::Error> {
-    let s = String::deserialize(deserializer)?;
-    if s.is_empty() {
-        Ok(None)
-    } else {
-        let addr: Address = s.parse().map_err(serde::de::Error::custom)?;
-        Ok(Some(addr))
+    match Option::<&str>::deserialize(deserializer)? {
+        None => Ok(None),
+        Some(s) => match s {
+            "" => Ok(None),
+            _ => Ok(Some(s.parse().map_err(serde::de::Error::custom)?))
+        }
     }
 }
+
+use serde::de::{self, Visitor, MapAccess};
+use std::fmt;
 
 /// Deserializes as JSON:
 ///
@@ -44,13 +47,37 @@ pub fn deserialize_address_opt<'de, D: Deserializer<'de>>(
 pub fn deserialize_stringified_source_code<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<SourceCodeMetadata, D::Error> {
-    let s = String::deserialize(deserializer)?;
-    if s.starts_with("{{") && s.ends_with("}}") {
-        let s = &s[1..s.len() - 1];
-        serde_json::from_str(s).map_err(serde::de::Error::custom)
-    } else {
-        Ok(SourceCodeMetadata::SourceCode(s))
+    struct StringOrStruct();
+
+    impl<'de> Visitor<'de> for StringOrStruct {
+        type Value = SourceCodeMetadata;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("string or map")
+        }
+
+        fn visit_str<E>(self, s: &str) -> std::result::Result<SourceCodeMetadata, E>
+        where
+            E: de::Error,
+        {
+            if s.starts_with("{{") && s.ends_with("}}") {
+                let s = &s[1..s.len() - 1];
+                serde_json::from_str(s).map_err(serde::de::Error::custom)
+            } else {
+                Ok(SourceCodeMetadata::SourceCode(s.to_string()))
+            }
+        }
+
+        fn visit_map<M>(self, map: M) -> std::result::Result<SourceCodeMetadata, M::Error>
+        where
+            M: MapAccess<'de>,
+        {
+            Deserialize::deserialize(de::value::MapAccessDeserializer::new(map))
+        }
+
     }
+
+    deserializer.deserialize_any(StringOrStruct())
 }
 
 #[cfg(test)]
