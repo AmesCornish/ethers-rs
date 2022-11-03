@@ -25,10 +25,10 @@ pub async fn lookup_compiler_version(version: &Version) -> Result<Version> {
 pub fn deserialize_address_opt<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> std::result::Result<Option<Address>, D::Error> {
-    match Option::<&str>::deserialize(deserializer)? {
+    match Option::<String>::deserialize(deserializer)? {
         None => Ok(None),
-        Some(s) => match s {
-            "" => Ok(None),
+        Some(s) => match s.is_empty() {
+            true => Ok(None),
             _ => Ok(Some(s.parse().map_err(serde::de::Error::custom)?))
         }
     }
