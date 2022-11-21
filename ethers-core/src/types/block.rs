@@ -186,7 +186,11 @@ impl<TX> Block<TX> {
         // Casting to i64 is safe because the timestamp is guaranteed to be less than 2^63.
         // TODO: It would be nice if there was `TryInto<i64> for U256`.
         let secs = self.timestamp.as_u64() as i64;
-        Ok(Utc.timestamp(secs, 0))
+        match Utc.timestamp_opt(secs, 0) {
+            chrono::LocalResult::None => Err(TimeError::TimestampZero),
+            chrono::LocalResult::Single(t) => Ok(t),
+            chrono::LocalResult::Ambiguous(_, _) => Err(TimeError::TimestampZero),
+        }
     }
 }
 
