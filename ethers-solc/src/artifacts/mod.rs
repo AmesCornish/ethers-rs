@@ -1645,7 +1645,7 @@ pub struct Creation {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Ewasm {
-    pub wast: String,
+    // pub wast: String,
     pub wasm: String,
 }
 
