@@ -27,10 +27,16 @@ pub use lowfidelity::{Ast, Node, NodeType, SourceLocation as LowFidelitySourceLo
 pub mod yul;
 
 use crate::artifacts::serde_helpers;
+use ambassador::{delegatable_trait, Delegate};
 use macros::{ast_node, expr_node, node_group, stmt_node};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use yul::YulBlock;
+
+#[delegatable_trait]
+pub trait ExpressionTrait {
+    fn get_type(&self) -> &Option<String>;
+}
 
 ast_node!(
     /// The root node of a Solidity AST.
@@ -61,8 +67,29 @@ node_group! {
     ContractDefinition,
 }
 
+impl ExpressionTrait for Identifier {
+    fn get_type(&self) -> &Option<String> {
+        &self.type_descriptions.type_string
+    }
+}
+
+impl ExpressionTrait for BinaryOperation {
+    fn get_type(&self) -> &Option<String> {
+        &self.common_type.type_string
+    }
+}
+
+impl<T> ExpressionTrait for Box<T>
+where
+    T: ExpressionTrait,
+{
+    fn get_type(&self) -> &Option<String> {
+        self.as_ref().get_type()
+    }
+}
+
 node_group! {
-    Expression;
+    Expression: ExpressionTrait;
 
     Assignment,
     BinaryOperation,

@@ -55,6 +55,11 @@ macro_rules! expr_node {
                 ),*
             }
         );
+        impl ExpressionTrait for $name {
+            fn get_type(&self) -> &Option<String> {
+                &self.type_descriptions.type_string
+            }
+        }
     }
 }
 
@@ -89,6 +94,16 @@ macro_rules! stmt_node {
 macro_rules! node_group {
     ($group:ident; $( $name:ident ),* $(,)*) => {
         #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(tag = "nodeType")]
+        pub enum $group {
+            $(
+                $name(Box<$name>),
+            )*
+        }
+    };
+    ($group:ident: $trait:ident; $( $name:ident ),* $(,)*) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Delegate)]
+        #[delegate($trait)]
         #[serde(tag = "nodeType")]
         pub enum $group {
             $(
