@@ -21,7 +21,21 @@ macro_rules! ast_node {
                 pub $field: $ty
             ),*
         }
-    };
+        impl NodeTrait for $name {
+            fn node_data(&self) -> (usize, SourceLocation) {
+                (self.id, self.src.clone())
+            }
+        }
+        impl NodeIterable for $name {
+            fn iter(&self) -> NodeIterator {
+                NodeVector::new()
+                    $(
+                        .extend(&self.$field)
+                    )*
+                        .iter()
+            }
+        }
+    }
 }
 
 /// A macro that expands to a struct with common expression node fields.
@@ -92,8 +106,11 @@ macro_rules! stmt_node {
 ///
 /// The inner value of each variant is boxed since AST types are inherently recursive.
 macro_rules! node_group {
-    ($group:ident; $( $name:ident ),* $(,)*) => {
-        #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+    ($group:ident$(: $trait:ident)?; $( $name:ident ),* $(,)*) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Delegate)]
+        $(#[delegate($trait)])?
+        #[delegate(NodeTrait)]
+        #[delegate(NodeIterable)]
         #[serde(tag = "nodeType")]
         pub enum $group {
             $(
@@ -101,9 +118,11 @@ macro_rules! node_group {
             )*
         }
     };
-    ($group:ident: $trait:ident; $( $name:ident ),* $(,)*) => {
-        #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Delegate)]
-        #[delegate($trait)]
+}
+
+macro_rules! node_group_yul {
+    ($group:ident; $( $name:ident ),* $(,)*) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(tag = "nodeType")]
         pub enum $group {
             $(
@@ -116,4 +135,5 @@ macro_rules! node_group {
 pub(crate) use ast_node;
 pub(crate) use expr_node;
 pub(crate) use node_group;
+pub(crate) use node_group_yul;
 pub(crate) use stmt_node;

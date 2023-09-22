@@ -19,6 +19,9 @@ pub mod visitor;
 
 /// A low fidelity representation of the AST.
 pub(crate) mod lowfidelity;
+#[macro_use]
+pub mod walk;
+pub mod traits;
 pub use lowfidelity::{Ast, Node, NodeType, SourceLocation as LowFidelitySourceLocation};
 
 /// Types for the Yul AST.
@@ -26,17 +29,19 @@ pub use lowfidelity::{Ast, Node, NodeType, SourceLocation as LowFidelitySourceLo
 /// The Yul AST is embedded into the Solidity AST for inline assembly blocks.
 pub mod yul;
 
-use crate::artifacts::serde_helpers;
-use ambassador::{delegatable_trait, Delegate};
-use macros::{ast_node, expr_node, node_group, stmt_node};
+use ambassador::Delegate;
+use derive_more::From;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+
+use crate::artifacts::serde_helpers;
+use macros::{ast_node, expr_node, node_group, stmt_node};
+use traits::{
+    ambassador_impl_ExpressionTrait, ambassador_impl_NodeTrait, ExpressionTrait, NodeTrait,
+};
 use yul::YulBlock;
 
-#[delegatable_trait]
-pub trait ExpressionTrait {
-    fn get_type(&self) -> &Option<String>;
-}
+use self::walk::{NodeIterable, NodeIterator, NodeVector};
 
 ast_node!(
     /// The root node of a Solidity AST.
@@ -76,15 +81,6 @@ impl ExpressionTrait for Identifier {
 impl ExpressionTrait for BinaryOperation {
     fn get_type(&self) -> &Option<String> {
         &self.common_type.type_string
-    }
-}
-
-impl<T> ExpressionTrait for Box<T>
-where
-    T: ExpressionTrait,
-{
-    fn get_type(&self) -> &Option<String> {
-        self.as_ref().get_type()
     }
 }
 
@@ -162,7 +158,9 @@ node_group! {
 }
 
 // TODO: Better name
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Delegate, From)]
+#[delegate(NodeTrait)]
+#[delegate(NodeIterable)]
 #[serde(untagged)]
 pub enum BlockOrStatement {
     Statement(Statement),
@@ -1072,7 +1070,9 @@ ast_node!(
 );
 
 /// A wrapper around [IdentifierPath] for the [UsingForDirective].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Delegate)]
+#[delegate(NodeTrait)]
+#[delegate(NodeIterable)]
 pub struct FunctionIdentifierPath {
     pub function: IdentifierPath,
 }

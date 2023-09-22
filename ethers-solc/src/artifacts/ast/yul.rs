@@ -1,8 +1,8 @@
-use super::{macros::node_group, misc::SourceLocation};
+use super::{macros::node_group_yul, misc::SourceLocation};
 use crate::artifacts::serde_helpers;
 use serde::{Deserialize, Serialize};
 
-node_group! {
+node_group_yul! {
     YulStatement;
 
     YulAssignment,
@@ -18,7 +18,7 @@ node_group! {
     YulVariableDeclaration,
 }
 
-node_group! {
+node_group_yul! {
     YulExpression;
 
     YulFunctionCall,
