@@ -1,6 +1,6 @@
 use ambassador::{delegatable_trait, Delegate};
 use derive_more::From;
-use std::{fmt::Display, iter};
+use std::fmt::Display;
 
 use super::*;
 use traits::{ambassador_impl_NodeTrait, NodeTrait};
@@ -40,7 +40,7 @@ impl Display for Node<'_> {
     }
 }
 
-pub type NodeIterator<'a> = Box<dyn Iterator<Item = Node<'a>> + 'a>;
+pub type NodeIterator<'a> = <Vec<Node<'a>> as IntoIterator>::IntoIter;
 
 pub struct NodeVector<'a>(Vec<Node<'a>>);
 
@@ -59,7 +59,7 @@ impl<'a> NodeVector<'a> {
     }
 
     pub fn iter(self) -> NodeIterator<'a> {
-        Box::new(self.0.into_iter())
+        self.0.into_iter()
     }
 }
 
@@ -158,7 +158,7 @@ not_node! {
 #[delegatable_trait]
 pub trait NodeIterable {
     fn iter(&self) -> NodeIterator {
-        Box::new(iter::empty())
+        Vec::new().into_iter()
     }
 }
 
