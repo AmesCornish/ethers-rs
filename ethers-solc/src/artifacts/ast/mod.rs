@@ -866,14 +866,21 @@ ast_node!(
     struct InlineAssembly {
         documentation: Option<String>,
         #[serde(rename = "AST")]
-        ast: YulBlock,
+        ast: Option<YulBlock>,
         // TODO: We need this camel case for the AST, but pascal case other places in ethers-solc
         //evm_version: EvmVersion,
-        external_references: Vec<ExternalInlineAssemblyReference>,
+        external_references: ExternalReferences,
         #[serde(default, deserialize_with = "serde_helpers::default_for_null")]
         flags: Vec<InlineAssemblyFlag>,
     }
 );
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged, rename_all = "camelCase")]
+pub enum ExternalReferences {
+    Typed(Vec<ExternalInlineAssemblyReference>),
+    Untyped(serde_json::Value),
+}
 
 /// A reference to an external variable or slot in an inline assembly block.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
