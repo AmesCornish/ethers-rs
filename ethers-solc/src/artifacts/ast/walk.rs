@@ -137,6 +137,7 @@ not_node! {
     ContractKind
     ElementaryOrRawTypeName
     ExternalInlineAssemblyReference
+    ExternalReferences
     FunctionCallKind
     FunctionKind
     InlineAssemblyFlag
