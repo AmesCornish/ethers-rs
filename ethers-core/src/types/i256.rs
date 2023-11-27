@@ -1102,6 +1102,7 @@ impl I256 {
             (255.., Sign::Negative) => Self::minus_one(),
 
             // Rust cannot prove that the above is exhaustive for usize (works for any other int)
+            #[allow(unreachable_patterns)]
             _ => unreachable!(),
         }
     }

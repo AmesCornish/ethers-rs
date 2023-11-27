@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![deny(unsafe_code, rustdoc::broken_intra_doc_links)]
+#![allow(unused_imports, dead_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 /// The [Gas Escalator middleware](crate::gas_escalator::GasEscalatorMiddleware)
