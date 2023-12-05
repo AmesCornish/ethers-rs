@@ -12,6 +12,9 @@ use std::{
     process::{Command, Output, Stdio},
     str::FromStr,
 };
+#[cfg(all(feature = "svm-solc", not(target_arch = "wasm32")))]
+use tracing::log;
+
 pub mod many;
 pub mod output;
 pub use output::{contracts, info, sources};
@@ -324,6 +327,7 @@ impl Solc {
     /// ```
     #[cfg(all(not(target_arch = "wasm32"), feature = "svm-solc"))]
     pub fn find_or_install_svm_version(version: impl AsRef<str>) -> Result<Self> {
+        log::debug!("find_or_install_svm_version");
         let version = version.as_ref();
         if let Some(solc) = Solc::find_svm_installed_version(version)? {
             Ok(solc)
@@ -434,6 +438,11 @@ impl Solc {
         result.map(Solc::new)
     }
 
+    #[cfg(all(feature = "svm-solc", not(target_arch = "wasm32")))]
+    async fn thread_install(v: Version) -> std::result::Result<PathBuf, svm::SolcVmError> {
+        svm::install(&v).await
+    }
+
     /// Blocking version of `Self::install`
     #[cfg(all(feature = "svm-solc", not(target_arch = "wasm32")))]
     pub fn blocking_install(version: &Version) -> std::result::Result<Self, svm::SolcVmError> {
@@ -448,7 +457,9 @@ impl Solc {
             if #[cfg(target_arch = "wasm32")] {
                 let installation = svm::blocking_install(version);
             } else {
-                let installation = RuntimeOrHandle::new().block_on(svm::install(version));
+                log::debug!("install...");
+                let installation = RuntimeOrHandle::new().block_on(Self::thread_install(version.clone()));
+                log::debug!("installed.");
             }
         };
         match installation {

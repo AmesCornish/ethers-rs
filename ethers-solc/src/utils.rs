@@ -433,10 +433,68 @@ impl RuntimeOrHandle {
         }
     }
 
-    pub fn block_on<F: std::future::Future>(&self, f: F) -> F::Output {
+    pub fn block_on<F: futures_util::Future>(&self, f: F) -> <F as futures_util::Future>::Output
+    where
+        <F as futures_util::Future>::Output: Send,
+        F: Send + 'static,
+    {
         match &self {
             RuntimeOrHandle::Runtime(runtime) => runtime.block_on(f),
-            RuntimeOrHandle::Handle(handle) => tokio::task::block_in_place(|| handle.block_on(f)),
+            RuntimeOrHandle::Handle(handle) => match handle.runtime_flavor() {
+                tokio::runtime::RuntimeFlavor::CurrentThread => {
+                    // // can call blocking only when running on the multi-threaded runtime
+                    // tokio::task::block_in_place(|| handle.block_on(f))
+
+                    // // Cannot start a runtime from within a runtime.:
+                    // handle.block_on(f)
+
+                    // // This doesn't seem to help
+                    // let _ = handle.enter();
+
+                    // // CLOSE: This starts a reqwest, but it never completes:
+                    // futures::executor::block_on(f)
+
+                    // // This also starts a reqwest, but it never completes:
+                    // futures::executor::block_on(tokio::task::LocalSet::new().run_until::<F>(f))
+
+                    // // Output cannot be sent between threads safely:
+                    // futures::executor::block_on(handle.spawn(f)).expect("executor fail")
+
+                    // // Output cannot be sent between threads safely:
+                    // futures::executor::block_on(handle.spawn(f)).expect("executor fail")
+
+                    // // `F` must be valid for the static lifetime
+                    // futures::executor::block_on(tokio::task::spawn_local(f)).expect("executor
+                    // fail")
+
+                    // // LocalSet block_on requires a Runtime, but we only have a Handle
+                    // tokio::task::LocalSet::new().block_on(&rt, f)
+
+                    // // This fails because "expected `futures_util::Future::Output`"
+                    // // `LocalSet::run_until::{opaque#0}`"
+                    // tokio::task::LocalSet::new().run_until::<F>(f)
+
+                    // // Returns a Future, not an Output
+                    // tokio::task::spawn_blocking(move || handle.block_on(f))
+
+                    // // Output cannot be sent between threads safely:
+                    // futures::executor::block_on(tokio::task::spawn_blocking(move || {
+                    //     handle.block_on(f)
+                    // }))
+                    // .unwrap()
+
+                    // // Output` cannot be sent between threads safely
+                    // let mut rt = tokio::runtime::Runtime::new().unwrap();
+                    // rt.block_on(async move { tokio::spawn(async { f.await }).await.unwrap() })
+
+                    // Works with where clause restrictions (Send + 'static)
+                    std::thread::spawn(move || Runtime::new().unwrap().block_on(f)).join().unwrap()
+
+                    // // Cannot start a runtime from within a runtime.
+                    // Runtime::new().unwrap().block_on(tokio::task::LocalSet::new().run_until(f))
+                }
+                _ => tokio::task::block_in_place(|| handle.block_on(f)),
+            },
         }
     }
 }

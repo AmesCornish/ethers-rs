@@ -28,7 +28,7 @@ all-features = true
 [dependencies]
 ethers-core.workspace = true
 ambassador = "0.3"
-derive_more = { version = "0.99", features = ["from"]}
+derive_more = { version = "0.99", features = ["from"] }
 
 solang-parser = { version = "=0.3.2", default-features = false }
 
@@ -49,6 +49,7 @@ yansi = "0.5.1"
 dirs = "5.0"
 glob = "0.3.1"
 tracing.workspace = true
+tracing.features = ["log"]
 num_cpus = "1.16.0"
 dunce.workspace = true
 rayon.workspace = true
@@ -67,6 +68,7 @@ svm = { package = "svm-rs", version = "0.3", default-features = false, features 
 ], optional = true }
 svm-builds = { package = "svm-rs-builds", version = "0.2", optional = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
+futures = "0.3"
 
 [dev-dependencies]
 criterion = { workspace = true, features = ["async_tokio"] }
@@ -102,7 +104,13 @@ default = ["rustls"]
 
 full = ["async", "svm-solc"]
 
-async = ["tokio/process", "tokio/io-util", "tokio/fs", "tokio/time", "futures-util"]
+async = [
+    "tokio/process",
+    "tokio/io-util",
+    "tokio/fs",
+    "tokio/time",
+    "futures-util",
+]
 svm-solc = ["svm", "svm-builds", "sha2"]
 
 # Utilities for creating and testing project workspaces
